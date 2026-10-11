@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GREETING: Hello, world!
+
+tasks:
+  fmt:
+    desc: Format the code
+    cmds:
+      - go fmt ./...
+  vuln:
+    desc: Check for vulnerabilities
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...

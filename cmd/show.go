@@ -1,9 +1,7 @@
-/*
-Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -12,32 +10,43 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	TASK_DONE_PRETTY        = "● done"
+	TASK_IN_PROGRESS_PRETTY = "○ in Progress"
+	TASK_NOT_STARTED_PRETTY = "○ not Started"
+
+	TASK_DONE        = "done"
+	TASK_IN_PROGRESS = "in Progress"
+	TASK_NOT_STARTED = "not Started"
+
+	DEFAULT_FILE_NAME = "todo.json"
+
+	ERROR_FILE_NOT_FOUND_OR_EMPTY = "You don't have any ToDo's yet, you can add some if you want to with the 'add' command :)"
+)
+
+type Task struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
 // showCmd represents the show command
 var showCmd = &cobra.Command{
 	Use:   "show",
 	Short: "shows all of the tasks in the todo list",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Your ToDo's for today")
-		showPrettyTodoList()
-		fmt.Println("show called")
+		todos := getTodos()
+
+		fmt.Println("Your To-Do's for today")
+		showPrettyTodoList(todos)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(showCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// showCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// showCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func showPrettyTodoList() {
+func showPrettyTodoList(todos []Task) {
 	pinkHeader := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FFB6C1")).
 		Bold(true)
@@ -61,11 +70,26 @@ func showPrettyTodoList() {
 		pinkHeader.Render("Status"),
 	})
 
-	t.AppendRows([]table.Row{
-		{purpleId.Render("01"), "Cry Yourself to Sleep", mintActive.Render("● done")},
-		{purpleId.Render("02"), "Build this CLI Toolp", mintActive.Render("○ in Progress")},
-		{purpleId.Render("03"), "Sleep", rosePause.Render("○ not Started")},
-	})
+	for _, todo := range todos {
+		var statusStyle lipgloss.Style
+		var prettyStatus string
+
+		switch todo.Status {
+		case TASK_DONE:
+			statusStyle = mintActive
+			prettyStatus = TASK_DONE_PRETTY
+		case TASK_IN_PROGRESS:
+			statusStyle = mintActive
+			prettyStatus = TASK_IN_PROGRESS_PRETTY
+		case TASK_NOT_STARTED:
+			statusStyle = rosePause
+			prettyStatus = TASK_NOT_STARTED_PRETTY
+		}
+
+		t.AppendRows([]table.Row{
+			{purpleId.Render(todo.ID), todo.Name, statusStyle.Render(prettyStatus)},
+		})
+	}
 
 	cuteStyle := table.StyleRounded
 
@@ -92,4 +116,30 @@ func showPrettyTodoList() {
 	t.SetStyle(cuteStyle)
 
 	t.Render()
+}
+
+func getTodos() []Task {
+	_, err := os.Stat(DEFAULT_FILE_NAME)
+	if err != nil {
+		fmt.Println(ERROR_FILE_NOT_FOUND_OR_EMPTY)
+		os.Exit(0)
+	}
+
+	rawData, err := os.ReadFile(DEFAULT_FILE_NAME)
+	if err != nil {
+		fmt.Println("Error reading the todo file:", err)
+		os.Exit(0)
+	} else if len(rawData) == 0 || string(rawData) == "[]" {
+		fmt.Println(ERROR_FILE_NOT_FOUND_OR_EMPTY)
+		os.Exit(0)
+	}
+
+	var tasks []Task
+	err = json.Unmarshal(rawData, &tasks)
+	if err != nil {
+		fmt.Println("Error parsing the todo file:", err)
+		os.Exit(0)
+	}
+
+	return tasks
 }

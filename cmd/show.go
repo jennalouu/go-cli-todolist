@@ -8,27 +8,8 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
+	"go-cli-todolist/constants"
 )
-
-const (
-	TASK_DONE_PRETTY        = "● done"
-	TASK_IN_PROGRESS_PRETTY = "○ in Progress"
-	TASK_NOT_STARTED_PRETTY = "○ not Started"
-
-	TASK_DONE        = "done"
-	TASK_IN_PROGRESS = "in Progress"
-	TASK_NOT_STARTED = "not Started"
-
-	DEFAULT_FILE_NAME = "todo.json"
-
-	ERROR_FILE_NOT_FOUND_OR_EMPTY = "You don't have any ToDo's yet, you can add some if you want to with the 'add' command :)"
-)
-
-type Task struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
-}
 
 // showCmd represents the show command
 var showCmd = &cobra.Command{
@@ -46,7 +27,7 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 }
 
-func showPrettyTodoList(todos []Task) {
+func showPrettyTodoList(todos []constants.Task) {
 	pinkHeader := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FFB6C1")).
 		Bold(true)
@@ -75,15 +56,15 @@ func showPrettyTodoList(todos []Task) {
 		var prettyStatus string
 
 		switch todo.Status {
-		case TASK_DONE:
+		case constants.TASK_DONE:
 			statusStyle = mintActive
-			prettyStatus = TASK_DONE_PRETTY
-		case TASK_IN_PROGRESS:
+			prettyStatus = constants.TASK_DONE_PRETTY
+		case constants.TASK_IN_PROGRESS:
 			statusStyle = mintActive
-			prettyStatus = TASK_IN_PROGRESS_PRETTY
-		case TASK_NOT_STARTED:
+			prettyStatus = constants.TASK_IN_PROGRESS_PRETTY
+		case constants.TASK_NOT_STARTED:
 			statusStyle = rosePause
-			prettyStatus = TASK_NOT_STARTED_PRETTY
+			prettyStatus = constants.TASK_NOT_STARTED_PRETTY
 		}
 
 		t.AppendRows([]table.Row{
@@ -118,23 +99,23 @@ func showPrettyTodoList(todos []Task) {
 	t.Render()
 }
 
-func getTodos() []Task {
-	_, err := os.Stat(DEFAULT_FILE_NAME)
+func getTodos() []constants.Task {
+	_, err := os.Stat(constants.DEFAULT_FILE_NAME)
 	if err != nil {
-		fmt.Println(ERROR_FILE_NOT_FOUND_OR_EMPTY)
+		fmt.Println(constants.ERROR_FILE_NOT_FOUND_OR_EMPTY)
 		os.Exit(0)
 	}
 
-	rawData, err := os.ReadFile(DEFAULT_FILE_NAME)
+	rawData, err := os.ReadFile(constants.DEFAULT_FILE_NAME)
 	if err != nil {
 		fmt.Println("Error reading the todo file:", err)
 		os.Exit(0)
 	} else if len(rawData) == 0 || string(rawData) == "[]" {
-		fmt.Println(ERROR_FILE_NOT_FOUND_OR_EMPTY)
+		fmt.Println(constants.ERROR_FILE_NOT_FOUND_OR_EMPTY)
 		os.Exit(0)
 	}
 
-	var tasks []Task
+	var tasks []constants.Task
 	err = json.Unmarshal(rawData, &tasks)
 	if err != nil {
 		fmt.Println("Error parsing the todo file:", err)
